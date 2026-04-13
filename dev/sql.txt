@@ -1,0 +1,1362 @@
+CREATE TABLE Users(
+    id INT AUTO_INCREMENT,
+    name VARCHAR(255),
+    age INT,
+    PRIMARY KEY(id)
+);
+
+INSERT INTO Users(name, age) VALUES('Krishna', 21);
+INSERT INTO Users(name, age) VALUES('Dinesh', 23);
+INSERT INTO Users(name, age) VALUES('Kulakshi', 22);
+INSERT INTO Users(name, age) VALUES('Kalana', 22);
+
+Authentication System(Krishna)
+
+-- Create main users table
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('customer', 'stadium_owner', 'coach', 'rental_owner') NOT NULL,
+    status ENUM('pending', 'active', 'inactive', 'suspended') DEFAULT 'pending',
+    email_verified BOOLEAN DEFAULT FALSE,
+    email_verification_token VARCHAR(255) NULL,
+    reset_password_token VARCHAR(255) NULL,
+    reset_password_expires DATETIME NULL,
+    last_login DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create customer profiles table
+CREATE TABLE customer_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    sports VARCHAR(100) NOT NULL,
+    age_group ENUM('under_18', '18_25', '26_35', 'above_35') NOT NULL,
+    skill_level ENUM('beginner', 'intermediate', 'advanced', 'professional') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create stadium owner profiles table
+CREATE TABLE stadium_owner_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    owner_name VARCHAR(255) NOT NULL,
+    business_name VARCHAR(255) NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    venue_type ENUM('stadium', 'indoor_court', 'outdoor_court', 'sports_complex', 'practice_nets') NOT NULL,
+    business_registration VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create coach profiles table
+CREATE TABLE coach_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    specialization VARCHAR(100) NOT NULL,
+    experience ENUM('1_3', '4_6', '7_10', '10_plus') NOT NULL,
+    certification ENUM('basic', 'intermediate', 'advanced', 'professional') NOT NULL,
+    coaching_type ENUM('individual', 'group', 'both') NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    availability ENUM('full_time', 'part_time', 'weekends') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create rental owner profiles table
+CREATE TABLE rental_owner_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    owner_name VARCHAR(255) NOT NULL,
+    business_name VARCHAR(255) NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    business_type VARCHAR(100) NOT NULL,
+    equipment_categories VARCHAR(255) NOT NULL,
+    delivery_service ENUM('yes', 'no') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create admins table (separate from users)
+CREATE TABLE admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    last_login DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create login attempts table for security
+CREATE TABLE login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email_time (email, attempted_at)
+);
+
+-- Insert default admin account
+INSERT INTO admins (username, password, email, full_name) VALUES 
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@bookmyground.lk', 'System Administrator');
+
+
+DROP TABLE IF EXISTS admins;
+
+CREATE TABLE admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'admin',
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    last_login DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO admins (email, password, full_name, role) VALUES 
+('admin@bookmyground.lk', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', 'admin');
+
+
+-- Add password reset columns to admins table if they don't exist
+ALTER TABLE admins 
+ADD COLUMN reset_password_token VARCHAR(255) NULL AFTER password,
+ADD COLUMN reset_password_expires DATETIME NULL AFTER reset_password_token;
+
+
+
+For Stadiums Fetching From Database
+-- Create stadiums table
+CREATE TABLE stadiums (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    category ENUM('Indoor', 'Outdoor') NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    rating DECIMAL(2, 1) DEFAULT 0.0,
+    image VARCHAR(255) NOT NULL,
+    status ENUM('Available', 'Booked', 'Maintenance') DEFAULT 'Available',
+    owner VARCHAR(255) NOT NULL,
+    owner_status ENUM('Online', 'Away', 'Offline') DEFAULT 'Offline',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create stadium features table
+CREATE TABLE stadium_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stadium_id INT NOT NULL,
+    feature_name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE
+);
+
+
+-- Insert stadiums
+INSERT INTO stadiums (name, type, category, price, location, rating, image, status, owner, owner_status) VALUES
+('Colombo Cricket Ground', 'Cricket', 'Outdoor', 5000, 'Colombo 03', 4.8, 'cricket-ground.jpg', 'Available', 'Rajesh Kumar', 'Online'),
+('Indoor Sports Complex', 'Multi-Sport', 'Indoor', 3500, 'Colombo 07', 4.6, 'indoor-complex.jpg', 'Available', 'Samantha Silva', 'Away'),
+('Football Arena Pro', 'Football', 'Outdoor', 7500, 'Colombo 05', 4.9, 'football-arena.jpg', 'Booked', 'David Fernando', 'Online'),
+('Tennis Academy Courts', 'Tennis', 'Outdoor', 2500, 'Colombo 06', 4.4, 'tennis-courts.jpg', 'Available', 'Michelle Perera', 'Online'),
+('Basketball Hub Angoda', 'Basketball', 'Indoor', 4000, 'Angoda', 4.7, 'basketball-court.jpg', 'Available', 'Kevin Rodrigo', 'Online'),
+('Swimming Pool Complex', 'Swimming', 'Outdoor', 6000, 'Mount Lavinia', 4.5, 'swimming-pool.jpg', 'Available', 'Sarah Johnson', 'Away');
+
+-- Insert features for stadium 1 (Colombo Cricket Ground)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(1, 'Lighting'), (1, 'Parking'), (1, 'WiFi'), (1, 'Extra Feature');
+
+-- Insert features for stadium 2 (Indoor Sports Complex)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(2, 'Air Conditioning'), (2, 'Parking'), (2, 'WiFi');
+
+-- Insert features for stadium 3 (Football Arena Pro)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(3, 'Professional Turf'), (3, 'Lighting'), (3, 'Parking'), (3, 'Extra Feature');
+
+-- Insert features for stadium 4 (Tennis Academy Courts)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(4, 'Clay Courts'), (4, 'Lighting'), (4, 'Equipment Rental'), (4, 'Extra 1'), (4, 'Extra 2');
+
+-- Insert features for stadium 5 (Basketball Hub Angoda)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(5, 'Professional Court'), (5, 'Sound System'), (5, 'Seating');
+
+-- Insert features for stadium 6 (Swimming Pool Complex)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(6, 'Olympic Size'), (6, 'Changing Rooms'), (6, 'Lifeguard'), (6, 'Extra 1'), (6, 'Extra 2'), (6, 'Extra 3');
+
+Add New Listings
+-- Insert 6 more stadiums in Colombo
+INSERT INTO stadiums (name, type, category, price, location, rating, image, status, owner, owner_status) VALUES
+('Colombo Badminton Center', 'Badminton', 'Indoor', 2800, 'Colombo 04', 4.6, 'badminton-center.jpg', 'Available', 'Nimal Jayasinghe', 'Online'),
+('Premier Squash Courts', 'Squash', 'Indoor', 3200, 'Colombo 03', 4.7, 'squash-courts.jpg', 'Available', 'Anura Perera', 'Online'),
+('Colombo Rugby Stadium', 'Rugby', 'Outdoor', 8500, 'Colombo 07', 4.9, 'rugby-stadium.jpg', 'Available', 'Mahesh Gunasekara', 'Away'),
+('Table Tennis Academy', 'Table Tennis', 'Indoor', 1500, 'Colombo 08', 4.3, 'table-tennis.jpg', 'Available', 'Champika Silva', 'Online'),
+('Volleyball Sports Complex', 'Volleyball', 'Outdoor', 3800, 'Colombo 05', 4.5, 'volleyball-complex.jpg', 'Booked', 'Ruwan Fernando', 'Offline'),
+('Hockey Practice Ground', 'Hockey', 'Outdoor', 4500, 'Colombo 06', 4.4, 'hockey-ground.jpg', 'Available', 'Sandun Wickramasinghe', 'Online');
+
+-- Insert features for stadium 7 (Colombo Badminton Center)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(7, 'Wooden Floor'), (7, 'Air Conditioning'), (7, 'Equipment Rental'), (7, 'Locker Rooms');
+
+-- Insert features for stadium 8 (Premier Squash Courts)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(8, 'Glass Courts'), (8, 'Air Conditioning'), (8, 'Shower Facilities'), (8, 'Pro Shop'), (8, 'Parking');
+
+-- Insert features for stadium 9 (Colombo Rugby Stadium)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(9, 'Natural Grass'), (9, 'Seating for 500'), (9, 'Floodlights'), (9, 'Parking');
+
+-- Insert features for stadium 10 (Table Tennis Academy)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(10, '8 Tables'), (10, 'Air Conditioning'), (10, 'Coaching Available');
+
+-- Insert features for stadium 11 (Volleyball Sports Complex)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(11, 'Sand Court'), (11, 'Beach Style'), (11, 'Lighting'), (11, 'Parking'), (11, 'Cafeteria'), (11, 'WiFi');
+
+-- Insert features for stadium 12 (Hockey Practice Ground)
+INSERT INTO stadium_features (stadium_id, feature_name) VALUES
+(12, 'Astro Turf'), (12, 'Lighting'), (12, 'Equipment Storage'), (12, 'Parking'), (12, 'Changing Rooms');
+
+
+Add Featured column
+-- Add is_featured column to stadiums table
+ALTER TABLE stadiums 
+ADD COLUMN is_featured BOOLEAN DEFAULT FALSE AFTER owner_status;
+
+-- Mark 6 stadiums as featured
+UPDATE stadiums SET is_featured = TRUE WHERE id IN (1, 3, 5, 7, 9, 11);
+
+-- Or if you want specific ones, update individually:
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 1;  -- Colombo Cricket Ground
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 3;  -- Football Arena Pro
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 5;  -- Basketball Hub Angoda
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 7;  -- Colombo Badminton Center
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 9;  -- Colombo Rugby Stadium
+-- UPDATE stadiums SET is_featured = TRUE WHERE id = 11; -- Volleyball Sports Complex
+
+
+
+Rental Service Listings
+-- Create rental_shops table
+CREATE TABLE rental_shops (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    store_name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    whatsapp VARCHAR(20) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    rating DECIMAL(2, 1) DEFAULT 0.0,
+    image VARCHAR(255) NOT NULL,
+    status ENUM('Open', 'Closed') DEFAULT 'Open',
+    owner VARCHAR(255) NOT NULL,
+    owner_status ENUM('Online', 'Away', 'Offline') DEFAULT 'Offline',
+    description TEXT,
+    hours VARCHAR(255),
+    delivery BOOLEAN DEFAULT FALSE,
+    experience VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create rental_equipment_types table
+CREATE TABLE rental_equipment_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rental_id INT NOT NULL,
+    equipment_type VARCHAR(100) NOT NULL,
+    FOREIGN KEY (rental_id) REFERENCES rental_shops(id) ON DELETE CASCADE
+);
+
+-- Create rental_features table
+CREATE TABLE rental_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rental_id INT NOT NULL,
+    feature_name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (rental_id) REFERENCES rental_shops(id) ON DELETE CASCADE
+);
+
+
+Add Data
+-- Insert rental shops
+INSERT INTO rental_shops (store_name, category, location, phone, whatsapp, email, address, rating, image, status, owner, owner_status, description, hours, delivery, experience) VALUES
+('Pro Sports Gear', 'Multi-Sport', 'Colombo 03', '+94 71 234 5678', '+94 71 234 5678', 'contact@prosportsgear.lk', '123 Galle Road, Colombo 03', 4.8, 'pro-sports-gear.jpg', 'Open', 'Kulassi Thathsarani', 'Online', 'Complete sports equipment rental service with premium quality gear for all sports.', 'Mon-Sun: 8:00 AM - 8:00 PM', TRUE, '10+ years'),
+('Cricket Zone Rentals', 'Cricket', 'Colombo 07', '+94 77 345 6789', '+94 77 345 6789', 'info@cricketzone.lk', '456 Duplication Road, Colombo 07', 4.6, 'cricket-zone.jpg', 'Open', 'Sunil Fernando', 'Online', 'Specialized cricket equipment rental with professional grade gear.', 'Mon-Sat: 9:00 AM - 7:00 PM', TRUE, '8+ years'),
+('Football Gear Hub', 'Football', 'Dehiwala', '+94 70 456 7890', '+94 70 456 7890', 'hello@footballgearhub.lk', '789 Galle Road, Dehiwala', 4.9, 'football-gear.jpg', 'Open', 'Dinesh Silva', 'Away', 'Premium football equipment rental for players and teams.', 'Mon-Sun: 7:00 AM - 9:00 PM', TRUE, '12+ years'),
+('Tennis Pro Rentals', 'Tennis', 'Mount Lavinia', '+94 76 567 8901', '+94 76 567 8901', 'rentals@tennispro.lk', '321 Hotel Road, Mount Lavinia', 4.7, 'tennis-pro.jpg', 'Open', 'Priya Rajapaksa', 'Online', 'High-quality tennis equipment rental with expert guidance.', 'Tue-Sun: 8:00 AM - 6:00 PM', FALSE, '6+ years'),
+('All Sports Equipment', 'Multi-Sport', 'Nugegoda', '+94 75 678 9012', '+94 75 678 9012', 'info@allsportsequipment.lk', '654 High Level Road, Nugegoda', 4.5, 'all-sports.jpg', 'Closed', 'Nimal Wickramasinghe', 'Offline', 'Wide range of sports equipment for rent at competitive prices.', 'Mon-Sat: 9:00 AM - 6:00 PM', TRUE, '15+ years'),
+('Basketball Gear Store', 'Basketball', 'Colombo 05', '+94 74 789 0123', '+94 74 789 0123', 'contact@basketballgear.lk', '987 Baseline Road, Colombo 05', 4.4, 'basketball-gear.jpg', 'Open', 'Kalana Ekanayaka Max', 'Online', 'Complete basketball equipment rental for players and teams.', 'Mon-Sun: 10:00 AM - 8:00 PM', TRUE, '5+ years');
+
+-- Insert equipment types for rental shop 1 (Pro Sports Gear)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(1, 'Cricket'), (1, 'Football'), (1, 'Tennis'), (1, 'Basketball');
+
+-- Insert features for rental shop 1
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(1, 'Home Delivery'), (1, 'Quality Guarantee'), (1, 'Online Booking');
+
+-- Insert equipment types for rental shop 2 (Cricket Zone Rentals)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(2, 'Cricket');
+
+-- Insert features for rental shop 2
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(2, 'Expert Advice'), (2, 'Equipment Maintenance'), (2, 'Bulk Discounts');
+
+-- Insert equipment types for rental shop 3 (Football Gear Hub)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(3, 'Football');
+
+-- Insert features for rental shop 3
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(3, 'Team Packages'), (3, 'Goalkeeper Gear'), (3, 'Size Fitting');
+
+-- Insert equipment types for rental shop 4 (Tennis Pro Rentals)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(4, 'Tennis');
+
+-- Insert features for rental shop 4
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(4, 'Racket Stringing'), (4, 'Professional Advice'), (4, 'Tournament Gear');
+
+-- Insert equipment types for rental shop 5 (All Sports Equipment)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(5, 'Cricket'), (5, 'Football'), (5, 'Tennis'), (5, 'Basketball'), (5, 'Badminton');
+
+-- Insert features for rental shop 5
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(5, 'Affordable Rates'), (5, 'Student Discounts'), (5, 'Equipment Insurance');
+
+-- Insert equipment types for rental shop 6 (Basketball Gear Store)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(6, 'Basketball');
+
+-- Insert features for rental shop 6
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(6, 'Professional Shoes'), (6, 'Team Uniforms'), (6, 'Training Equipment');
+
+
+-- Insert 6 more rental shops
+INSERT INTO rental_shops (store_name, category, location, phone, whatsapp, email, address, rating, image, status, owner, owner_status, description, hours, delivery, experience) VALUES
+('Badminton Pro Shop', 'Badminton', 'Colombo 04', '+94 72 890 1234', '+94 72 890 1234', 'info@badmintonproshop.lk', '147 Duplication Road, Colombo 04', 4.8, 'badminton-pro.jpg', 'Open', 'Amila Jayawardena', 'Online', 'Specialized badminton equipment with professional grade rackets and shuttlecocks.', 'Mon-Sun: 9:00 AM - 7:00 PM', TRUE, '9+ years'),
+('Swimming Gear Paradise', 'Swimming', 'Wellawatte', '+94 71 901 2345', '+94 71 901 2345', 'contact@swimgearparadise.lk', '258 Galle Road, Wellawatte', 4.5, 'swimming-gear.jpg', 'Open', 'Chaminda Perera', 'Away', 'Complete swimming equipment rental including goggles, fins, and training aids.', 'Tue-Sun: 8:00 AM - 6:00 PM', FALSE, '7+ years'),
+('Rugby Equipment Center', 'Rugby', 'Colombo 07', '+94 77 012 3456', '+94 77 012 3456', 'rentals@rugbyequipment.lk', '369 Reid Avenue, Colombo 07', 4.6, 'rugby-equipment.jpg', 'Open', 'Roshan De Silva', 'Online', 'Professional rugby gear for players and teams including protective equipment.', 'Mon-Sat: 8:00 AM - 8:00 PM', TRUE, '11+ years'),
+('Volleyball Essentials', 'Volleyball', 'Dehiwala', '+94 76 123 4567', '+94 76 123 4567', 'hello@volleyballessentials.lk', '741 Station Road, Dehiwala', 4.7, 'volleyball-essentials.jpg', 'Open', 'Sanduni Fernando', 'Online', 'Quality volleyball equipment for beach and indoor courts with net systems.', 'Mon-Sun: 7:00 AM - 9:00 PM', TRUE, '8+ years'),
+('Athletic Track Rentals', 'Athletics', 'Nugegoda', '+94 75 234 5678', '+94 75 234 5678', 'info@athletictrack.lk', '852 High Level Road, Nugegoda', 4.4, 'athletic-track.jpg', 'Open', 'Kasun Bandara', 'Away', 'Track and field equipment including spikes, javelins, and training gear.', 'Mon-Fri: 9:00 AM - 6:00 PM', FALSE, '6+ years'),
+('Hockey Gear Station', 'Hockey', 'Mount Lavinia', '+94 74 345 6789', '+94 74 345 6789', 'support@hockeygearstation.lk', '963 Beach Road, Mount Lavinia', 4.9, 'hockey-gear.jpg', 'Open', 'Tharaka Wijesinghe', 'Online', 'Complete hockey equipment rental with sticks, protective gear, and balls.', 'Mon-Sun: 8:00 AM - 7:00 PM', TRUE, '13+ years');
+
+-- Insert equipment types for rental shop 7 (Badminton Pro Shop)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(7, 'Badminton');
+
+-- Insert features for rental shop 7
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(7, 'Professional Rackets'), (7, 'Stringing Service'), (7, 'Tournament Quality');
+
+-- Insert equipment types for rental shop 8 (Swimming Gear Paradise)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(8, 'Swimming');
+
+-- Insert features for rental shop 8
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(8, 'Prescription Goggles'), (8, 'Training Equipment'), (8, 'Size Fitting');
+
+-- Insert equipment types for rental shop 9 (Rugby Equipment Center)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(9, 'Rugby');
+
+-- Insert features for rental shop 9
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(9, 'Protective Gear'), (9, 'Team Packages'), (9, 'Custom Fitting'), (9, 'Equipment Insurance');
+
+-- Insert equipment types for rental shop 10 (Volleyball Essentials)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(10, 'Volleyball');
+
+-- Insert features for rental shop 10
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(10, 'Net Systems'), (10, 'Beach Volleyball'), (10, 'Indoor Equipment'), (10, 'Bulk Discounts');
+
+-- Insert equipment types for rental shop 11 (Athletic Track Rentals)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(11, 'Athletics');
+
+-- Insert features for rental shop 11
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(11, 'Track Spikes'), (11, 'Field Equipment'), (11, 'Training Tools');
+
+-- Insert equipment types for rental shop 12 (Hockey Gear Station)
+INSERT INTO rental_equipment_types (rental_id, equipment_type) VALUES
+(12, 'Hockey');
+
+-- Insert features for rental shop 12
+INSERT INTO rental_features (rental_id, feature_name) VALUES
+(12, 'Professional Sticks'), (12, 'Protective Gear'), (12, 'Equipment Maintenance'), (12, 'Team Discounts'), (12, 'Free Delivery');
+
+
+
+
+customer login_attempts-- Add test customers to the database
+-- Password for all test customers is: customer123
+
+-- Insert test customer 1
+INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at) VALUES 
+('Krishna', 'Wishvajith', 'customer@test.com', '+94 71 234 5678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer', 'active', NOW());
+
+-- Get the user ID for customer profile (assuming it's 1, adjust if needed)
+INSERT INTO customer_profiles (user_id, district, sports, age_group, skill_level, created_at) VALUES 
+(LAST_INSERT_ID(), 'Colombo', 'football', '18_25', 'intermediate', NOW());
+
+-- Insert test customer 2
+INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at) VALUES 
+('Kulakshi', 'Thathsarani', 'kulakshi@test.com', '+94 77 345 6789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer', 'active', NOW());
+
+INSERT INTO customer_profiles (user_id, district, sports, age_group, skill_level, created_at) VALUES 
+(LAST_INSERT_ID(), 'Kandy', 'tennis', '18_25', 'advanced', NOW());
+
+-- Insert test customer 3  
+INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at) VALUES 
+('Dinesh', 'Sulakshana', 'dinesh@test.com', '+94 70 456 7890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer', 'active', NOW());
+
+INSERT INTO customer_profiles (user_id, district, sports, age_group, skill_level, created_at) VALUES 
+(LAST_INSERT_ID(), 'Galle', 'cricket', '26_35', 'professional', NOW());
+
+-- Insert test customer 4
+INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at) VALUES 
+('Kalana', 'Ekanayake', 'kalana@test.com', '+94 76 567 8901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer', 'active', NOW());
+
+INSERT INTO customer_profiles (user_id, district, sports, age_group, skill_level, created_at) VALUES 
+(LAST_INSERT_ID(), 'Negombo', 'basketball', '18_25', 'beginner', NOW());
+
+-- Test credentials for login:
+-- Email: customer@test.com, Password: customer123
+-- Email: kulakshi@test.com, Password: customer123  
+-- Email: dinesh@test.com, Password: customer123
+-- Email: kalana@test.com, Password: customer123
+
+
+
+Stadium Owner:
+-- Add test stadium owner account
+-- Password: owner123
+
+INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at) VALUES 
+('Stadium', 'Owner', 'owner@test.com', '+94 71 999 8888', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'stadium_owner', 'active', NOW());
+
+-- Insert stadium owner profile (get the last inserted ID)
+INSERT INTO stadium_owner_profiles (user_id, owner_name, business_name, district, venue_type, business_registration, created_at) VALUES 
+(LAST_INSERT_ID(), 'John Stadium Owner', 'Premium Sports Complex', 'Colombo', 'sports_complex', 'BR123456789', NOW());
+
+-- Test credentials:
+-- Email: owner@test.com
+-- Password:
+
+
+
+
+Rental Owner Issue Fix:
+
+-- Fix rental_owner_profiles table structure
+DROP TABLE IF EXISTS rental_owner_profiles;
+
+CREATE TABLE rental_owner_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    owner_name VARCHAR(255) NOT NULL,
+    business_name VARCHAR(255) NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    business_type VARCHAR(100) NOT NULL,
+    equipment_categories VARCHAR(255) NOT NULL,
+    delivery_service ENUM('yes', 'no', 'conditional', 'paid') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+
+coaches table issue fixing 
+DROP TABLE IF EXISTS coach_profiles;
+
+CREATE TABLE coach_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    specialization VARCHAR(100) NOT NULL,
+    experience ENUM('1_3', '4_6', '7_10', '11_15', '15_plus') NOT NULL,
+    certification ENUM('none', 'basic', 'intermediate', 'advanced', 'professional', 'international') NOT NULL,
+    coaching_type ENUM('individual', 'group', 'team', 'both', 'all') NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    availability ENUM('full_time', 'part_time', 'weekends', 'evenings', 'flexible') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- Emergency contacts minimal schema for current users table
+-- Run this against your bookmyground database
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  contact_name VARCHAR(255) NOT NULL,
+  relationship VARCHAR(100) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  email VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_emergency_contacts_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+
+
+
+
+------------kalana sql tables----------------------------------------------------------------------------------
+
+
+
+
+
+--coach card details--
+
+-- Create coach_card_details table to store extended coach profile info (bio, training style, languages, achievements, awards, availability text, hourly rate)----
+CREATE TABLE IF NOT EXISTS coach_card_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    bio TEXT,
+    training_style TEXT,
+    languages VARCHAR(255), -- comma-separated list (e.g. 'Sinhala,English')
+    achievements TEXT,
+    awards TEXT,
+    availability_text VARCHAR(255), -- human readable availability description
+    hourly_rate DECIMAL(10,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_coach_card_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+
+
+
+--coach free training session--
+
+-- Create coach_free_training table to store coaches' free training session slots
+CREATE TABLE IF NOT EXISTS coach_free_training (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    day ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
+    time_slot VARCHAR(100) NOT NULL, -- e.g. '4:00 PM - 5:00 PM'
+    session_type VARCHAR(100) NOT NULL, -- e.g. 'Group Session'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_coach_free_training_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+--coach_profiles table add new colum for save image path--
+ALTER TABLE coach_profiles
+ADD COLUMN image VARCHAR(255) NULL AFTER availability;
+
+
+
+-- blog page post table----
+--create 2025/12/23--
+CREATE TABLE posts (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL,
+  excerpt TEXT,
+  content LONGTEXT NOT NULL,
+  author_id INT UNSIGNED DEFAULT NULL,
+  category VARCHAR(150) DEFAULT NULL,
+  status ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',
+  featured_image VARCHAR(255) DEFAULT NULL,
+  views INT UNSIGNED NOT NULL DEFAULT 0,
+  meta_title VARCHAR(255) DEFAULT NULL,
+  meta_description VARCHAR(512) DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY ux_posts_slug (slug),
+  KEY idx_posts_status_created (status, created_at),
+  KEY idx_posts_category (category),
+  KEY idx_posts_author (author_id),
+  FULLTEXT KEY ft_posts_title_content (title, content)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+--update 2026/01/10--
+ALTER TABLE posts
+ADD COLUMN tags VARCHAR(255) DEFAULT NULL
+AFTER category;
+
+----above alredy have krishna DB------
+
+
+-----update 2026/03/30------------------
+
+
+ALTER TABLE coach_profiles DROP COLUMN image;
+
+
+CREATE TABLE coach_profile_pictures (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+----------update 2026/04/02-------------
+(temporely, could be chsnge in future)
+CREATE TABLE verification (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    
+    user_id INT NOT NULL,
+    
+    specialization VARCHAR(255) NOT NULL,
+    experience INT NOT NULL,
+    certification VARCHAR(255),
+    
+    file_path VARCHAR(255), -- path to uploaded certificate
+    
+    status ENUM('not_submitted','pending','verified','rejected') DEFAULT 'not_submitted',
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_verification_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES users(id) 
+        ON DELETE CASCADE
+);
+
+update 2026/04/05 -----------------------
+
+ALTER TABLE verification DROP COLUMN specialization;
+ALTER TABLE verification DROP COLUMN experience;
+
+update 2026/04/12 ------------------------------
+
+ALTER TABLE posts 
+ADD COLUMN is_deleted TINYINT(1) DEFAULT 0 AFTER views;
+
+ALTER TABLE posts 
+ADD COLUMN deleted_at DATETIME NULL AFTER is_deleted;
+
+
+
+
+
+
+
+
+
+--Kulakshi Stadium Listing Crud Operation--
+
+ALTER TABLE stadiums
+ADD COLUMN contact_person varchar(255) DEFAULT NULL,
+ADD COLUMN whatsapp_number varchar(255) DEFAULT NULL,
+ADD COLUMN cancellation_policy varchar(255) DEFAULT NULL,
+ADD COLUMN special_instructions varchar(255) DEFAULT NULL,
+ADD COLUMN district varchar(255) DEFAULT NULL,
+ADD COLUMN postal_code varchar(255) DEFAULT NULL,
+ADD COLUMN description text DEFAULT NULL,
+ADD COLUMN opening_hours varchar(255) DEFAULT NULL,
+ADD COLUMN advance_booking varchar(255) DEFAULT NULL,
+ADD COLUMN minimum_duration varchar(255) DEFAULT NULL,
+ADD COLUMN contact_phone varchar(255) DEFAULT NULL,
+ADD COLUMN total_bookings varchar(255) DEFAULT NULL,
+ADD COLUMN monthly_revenue varchar(255) DEFAULT NULL,
+ADD COLUMN contact_email varchar(255) DEFAULT NULL;
+
+
+
+
+-- ========================================
+-- FAQ SYSTEM TABLES
+-- ========================================
+
+-- Create faq_categories table
+CREATE TABLE IF NOT EXISTS faq_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    slug VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NULL,
+    icon VARCHAR(10) DEFAULT '❓',
+    sort_order INT DEFAULT 0,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+-- Krishna 14/02 admin configuration
+
+-- Create stadium_packages table for admin-manageable packages
+CREATE TABLE IF NOT EXISTS stadium_packages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    setup_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+    commission_rate INT NOT NULL DEFAULT 0,
+    stadium_limit VARCHAR(20) NOT NULL DEFAULT '0',
+    photos_per_property INT NOT NULL DEFAULT 0,
+    videos_per_property INT NOT NULL DEFAULT 0,
+    featured_listings INT NOT NULL DEFAULT 0,
+    support VARCHAR(255) DEFAULT NULL,
+    marketing_tools BOOLEAN DEFAULT FALSE,
+    advanced_analytics BOOLEAN DEFAULT FALSE,
+    priority_support BOOLEAN DEFAULT FALSE,
+    dedicated_manager BOOLEAN DEFAULT FALSE,
+    api_access BOOLEAN DEFAULT FALSE,
+    icon VARCHAR(10) DEFAULT '⚡',
+    color VARCHAR(50) DEFAULT 'standard',
+    is_popular BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create faqs table
+CREATE TABLE IF NOT EXISTS faqs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    sort_order INT DEFAULT 0,
+    status ENUM('published', 'draft') DEFAULT 'published',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_faq_category FOREIGN KEY (category_id) REFERENCES faq_categories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert FAQ categories
+INSERT INTO faq_categories (slug, name, description, icon, sort_order) VALUES
+('general', 'General Questions', 'Basic information about our platform', '❓', 1),
+('booking', 'Booking & Reservations', 'How to book stadiums and manage reservations', '📅', 2),
+('payment', 'Payment & Billing', 'Payment methods and billing information', '💳', 3),
+('equipment', 'Equipment Rental', 'Renting sports equipment and gear', '⚽', 4),
+('coaching', 'Coaching Services', 'Professional coaching and training', '👨‍🏫', 5),
+('account', 'Account & Profile', 'Managing your account and profile', '👤', 6);
+
+-- Insert FAQs - General Questions (category_id = 1)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(1, 'What is BookMyGround.com?', 'BookMyGround.com is a dedicated sports booking platform that allows you to book stadiums and grounds online. We also list advertisements for rental services and coaches, making it easier for you to find the support you need for your sports activities.', 1),
+(1, 'How do I get started on BookMyGround?', 'Getting started is easy! Just create an account under your user role (customer, stadium owner, rental service provider, or coach). Once registered, you can immediately browse available stadiums, equipment, and coaching services—and book your first session within minutes.', 2),
+(1, 'Is BookMyGround available in my city?', 'We''re rapidly expanding across Sri Lanka! Currently, our services are available in major cities, including the Colombo area. Visit our locations page for the most up-to-date coverage.', 3),
+(1, 'What sports do you support?', 'We support a wide range of sports, including football, cricket, badminton, and many more. Our platform caters to both individual players and teams looking for facilities and services.', 4);
+
+-- Insert FAQs - Booking & Reservations (category_id = 2)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(2, 'How far in advance can I book a stadium?', 'You can book stadiums up to 28 days in advance. This helps with proper planning while keeping availability fair for all users. For popular venues, we recommend booking at least 2–3 weeks early.', 1),
+(2, 'Can I cancel or modify my booking?', 'Yes! You can cancel your booking up to 12 hours before the scheduled time.', 2),
+(2, 'Do I need to make a payment to confirm my booking?', 'Yes, all bookings must be confirmed with an online payment. This ensures your slot is reserved and prevents double-booking. Payment details and receipts will be provided immediately after your booking.', 3),
+(2, 'Can I book for a group or team?', 'Absolutely! We support both individual and group bookings. You can book for teams, organize tournaments, or reserve multiple time slots. For large group bookings or special arrangements, please contact our support team.', 4);
+
+-- Insert FAQs - Payment & Billing (category_id = 3)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(3, 'What payment methods do you accept?', 'We currently accept credit and debit card payments. We plan to add more payment options in the future.', 1),
+(3, 'When do I get charged for my booking?', 'Payments are processed immediately upon booking confirmation.', 2),
+(3, 'Do you offer refunds?', 'Yes. We offer full refunds (excluding handling fees) for cancellations made at least 12 hours before the scheduled booking time. Cancellations made within 12 hours of the booking will not be eligible for a refund.', 3);
+
+-- Insert FAQs - Equipment Rental (category_id = 4)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(4, 'What equipment can I rent?', 'We provide access to a wide range of sports equipment, including balls, rackets, protective gear, training equipment, and more. Availability may vary depending on the rental service provider. You can check what''s available at your selected provider through our platform.', 1),
+(4, 'How much does equipment rental cost?', 'Rental prices depend on the type of equipment and the duration of use. Basic items like balls and rackets typically start at LKR 50–100 per session. However, the final prices are determined by each rental service provider. Please note that we do not handle rental bookings directly — we only publish their advertisements. You can contact the provider via our website to confirm rates and arrange rentals.', 2);
+
+-- Insert FAQs - Coaching Services (category_id = 5)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(5, 'How do I find a coach?', 'Browse our coaching section to find certified coaches in your area. You can filter by sport, location, experience level, and price. Each coach has a detailed profile with qualifications, experience, and student reviews.', 1),
+(5, 'What are the coaching rates?', 'Coaching rates vary depending on the coach''s experience, the sport, and the session duration. Individual sessions typically range from LKR 500–2000 per hour. Many coaches also offer group sessions and package deals at discounted rates. Please note that we do not provide direct booking services for coaching — we only publish their advertisements. You can contact the coaches directly via our platform for detailed pricing and arrangements.', 2);
+
+-- Insert FAQs - Account & Profile (category_id = 6)
+INSERT INTO faqs (category_id, question, answer, sort_order) VALUES
+(6, 'How do I update my profile information?', 'Go to your dashboard and click on the Profile section. You can update your personal information, contact details, preferences, and profile picture.', 1),
+(6, 'Can I have multiple accounts?', 'We recommend using one account per person for better tracking and management. However, if you need separate accounts for business purposes, please contact our support team for assistance.', 2);
+
+
+-- ========================================
+-- CUSTOMER PAYMENTS TABLE
+-- ========================================
+
+CREATE TABLE customer_payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    transaction_id VARCHAR(50) UNIQUE NOT NULL,
+    stadium_name VARCHAR(255) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status ENUM('completed', 'pending', 'failed', 'refunded') DEFAULT 'completed',
+    payment_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sample payment data (use actual user_id from your users table)
+-- INSERT INTO customer_payments (user_id, transaction_id, stadium_name, payment_method, amount, status, payment_date) VALUES
+-- (1, 'TXN12345', 'Central Football Arena', 'Credit Card', 800.00, 'completed', '2025-01-25'),
+-- (1, 'TXN12346', 'Badminton Court Pro', 'Debit Card', 600.00, 'completed', '2025-01-28');
+
+
+-- ========================================
+-- CUSTOMER FAVORITE STADIUMS TABLE
+-- ========================================
+
+CREATE TABLE favorite_stadiums (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    stadium_id INT NOT NULL,
+    nickname VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_stadium (user_id, stadium_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ========================================
+-- BOOKINGS TABLE
+-- ========================================
+
+CREATE TABLE bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    stadium_id INT NOT NULL,
+    booking_date DATE NOT NULL,
+    time_slot VARCHAR(50) NOT NULL,
+    duration INT DEFAULT 1,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending',
+    payment_status ENUM('unpaid', 'paid', 'refunded') DEFAULT 'unpaid',
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sample booking data (use actual user_id and stadium_id from your tables)
+-- INSERT INTO bookings (user_id, stadium_id, booking_date, time_slot, duration, total_amount, status, payment_status) VALUES
+-- (1, 1, '2026-02-10', '10:00 AM - 12:00 PM', 2, 10000.00, 'confirmed', 'paid'),
+-- (1, 3, '2026-02-15', '2:00 PM - 4:00 PM', 2, 15000.00, 'pending', 'unpaid'),
+-- (1, 5, '2026-01-28', '6:00 PM - 8:00 PM', 2, 8000.00, 'completed', 'paid');
+
+
+-- ============================================
+-- SOFT DELETE COLUMNS (Customer Dashboard)
+-- ============================================
+ALTER TABLE emergency_contacts ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE customer_payments ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE favorite_stadiums ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1;
+
+
+-- ============================================
+-- PROFILE PICTURE SOFT DELETE (Customer Dashboard)
+-- ============================================
+ALTER TABLE users ADD COLUMN profile_picture_active TINYINT(1) NOT NULL DEFAULT 1;
+
+
+-- ============================================
+-- ADVERTISEMENT REQUESTS TABLE (Customer Dashboard)
+-- ============================================
+CREATE TABLE advertisement_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    package VARCHAR(50) NOT NULL,
+    website VARCHAR(255) NULL,
+    message TEXT NULL,
+    file_path VARCHAR(255) NULL,
+    status ENUM('pending', 'approved', 'rejected', 'active', 'expired') DEFAULT 'pending',
+    submitted_at DATETIME NOT NULL,
+    approved_at DATETIME NULL,
+    expires_at DATETIME NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+-- Insert default packages (matching current hardcoded values)
+INSERT INTO stadium_packages (name, description, setup_fee, commission_rate, stadium_limit, photos_per_property, videos_per_property, featured_listings, support, marketing_tools, advanced_analytics, priority_support, icon, color, is_popular, display_order) VALUES
+('Basic', 'Perfect for getting started with stadium rentals', 1380, 8, '3', 3, 3, 0, 'Email Support', FALSE, FALSE, FALSE, '🌟', 'basic', FALSE, 1),
+('Standard', 'Ideal for growing stadium businesses', 1380, 12, '6', 5, 5, 3, 'Email & Phone Support', TRUE, TRUE, TRUE, '⚡', 'standard', TRUE, 2),
+('Gold', 'For established stadium owners who want maximum exposure', 1380, 20, 'unlimited', 10, 5, 5, 'Priority Support 24/7', TRUE, TRUE, TRUE, '👑', 'gold', FALSE, 3);
+
+-- Create package_purchases table to track stadium owner package purchases
+CREATE TABLE IF NOT EXISTS package_purchases (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    package_id INT NOT NULL,
+    payment_amount DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) DEFAULT 'stripe',
+    stripe_charge_id VARCHAR(255) DEFAULT NULL,
+    package_status ENUM('pending', 'active', 'suspended', 'expired') DEFAULT 'pending',
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    activated_at TIMESTAMP NULL,
+    expires_at TIMESTAMP NULL,
+    admin_notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (package_id) REFERENCES stadium_packages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+-- Rental Service stadium_features
+ALTER TABLE package_purchases 
+MODIFY COLUMN package_status ENUM('pending', 'active', 'suspended', 'expired', 'failed') DEFAULT 'pending';
+
+ALTER TABLE rental_package_purchases 
+MODIFY COLUMN package_status ENUM('pending', 'active', 'suspended', 'expired', 'failed') DEFAULT 'pending';
+
+
+
+
+
+-- Create rental_shops table for rental owner listings
+CREATE TABLE IF NOT EXISTS rental_shops (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_id INT NOT NULL,
+    shop_name VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    district VARCHAR(100),
+    description TEXT,
+    category VARCHAR(100),
+    contact_email VARCHAR(255) NOT NULL,
+    contact_phone VARCHAR(20) NOT NULL,
+    operating_hours VARCHAR(255),
+    daily_rate DECIMAL(10,2) DEFAULT 0,
+    equipment_count INT DEFAULT 0,
+    status ENUM('active', 'inactive', 'pending') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_owner (owner_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create rental_shop_images table for multiple images per shop
+CREATE TABLE IF NOT EXISTS rental_shop_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE,
+    INDEX idx_shop (shop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create rental_shop_equipment_types table (many-to-many)
+CREATE TABLE IF NOT EXISTS rental_shop_equipment_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    equipment_type VARCHAR(100) NOT NULL,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE,
+    INDEX idx_shop (shop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create rental_shop_amenities table
+CREATE TABLE IF NOT EXISTS rental_shop_amenities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    amenity VARCHAR(100) NOT NULL,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE,
+    INDEX idx_shop (shop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+-- Add owner_id column to your existing rental_shops table
+ALTER TABLE rental_shops 
+ADD COLUMN owner_id INT NULL AFTER id,
+ADD INDEX idx_owner_id (owner_id);
+
+-- Create rental_shop_images table for multiple images
+CREATE TABLE IF NOT EXISTS rental_shop_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE,
+    INDEX idx_shop (shop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE rental_shops 
+ADD COLUMN owner_id INT NULL AFTER id,
+ADD INDEX idx_owner_id (owner_id);
+
+CREATE TABLE IF NOT EXISTS rental_shop_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE,
+    INDEX idx_shop (shop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+-- Create rental_shop_images table (if it doesn't exist)
+CREATE TABLE IF NOT EXISTS rental_shop_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT 0,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop_id) REFERENCES rental_shops(id) ON DELETE CASCADE
+);
+
+-- Modify status column to include approval statuses
+ALTER TABLE rental_shops 
+MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'Open', 'Closed') DEFAULT 'pending';
+
+-- Add approval tracking columns
+ALTER TABLE rental_shops 
+ADD COLUMN approved_by INT NULL AFTER status,
+ADD COLUMN approved_at DATETIME NULL AFTER approved_by,
+ADD COLUMN rejection_reason TEXT NULL AFTER approved_at;
+
+-- Set existing shops to 'approved' (so they stay visible)
+UPDATE rental_shops SET status = 'approved' 
+WHERE status IN ('Open', 'Closed') OR status IS NULL;
+
+
+-- Only add owner_id (district already exists)
+ALTER TABLE stadiums 
+ADD COLUMN owner_id INT NULL AFTER id;
+
+-- Add foreign key
+ALTER TABLE stadiums
+ADD CONSTRAINT fk_stadium_owner 
+FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- Add index for performance
+CREATE INDEX idx_stadiums_owner_id ON stadiums(owner_id);
+
+-- Create stadium_images table
+CREATE TABLE IF NOT EXISTS stadium_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stadium_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_stadium_images_stadium_id ON  stadium_images(stadium_id);
+
+
+-- Add approval system columns to stadiums table
+ALTER TABLE stadiums 
+ADD COLUMN approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending' AFTER status,
+ADD COLUMN approved_by INT NULL AFTER approval_status,
+ADD COLUMN approved_at DATETIME NULL AFTER approved_by,
+ADD COLUMN rejection_reason TEXT NULL AFTER approved_at,
+ADD INDEX idx_approval_status (approval_status),
+ADD FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL;
+
+-- Update existing stadiums to approved status (so they remain visible)
+UPDATE stadiums SET approval_status = 'approved' WHERE approval_status = 'pending';
+
+-- This drops the problematic foreign key and recreates it properly
+ALTER TABLE stadiums DROP FOREIGN KEY stadiums_ibfk_1;
+
+ALTER TABLE stadiums 
+ADD CONSTRAINT fk_stadiums_approved_by 
+FOREIGN KEY (approved_by) 
+REFERENCES users(id) 
+ON DELETE SET NULL 
+ON UPDATE CASCADE;
+
+ALTER TABLE stadiums MODIFY COLUMN approved_by INT NULL DEFAULT NULL;
+
+
+-- Remove the problematic foreign key constraint
+ALTER TABLE stadiums DROP FOREIGN KEY fk_stadiums_approved_by;
+
+-- Keep the column but make sure it accepts NULL
+ALTER TABLE stadiums MODIFY COLUMN approved_by INT NULL DEFAULT NULL;
+
+
+-- File: ADD_LAT_LNG_TO_STADIUMS.sql
+
+ALTER TABLE stadiums 
+ADD COLUMN latitude DECIMAL(10, 8) NULL DEFAULT NULL AFTER location,
+ADD COLUMN longitude DECIMAL(11, 8) NULL DEFAULT NULL AFTER latitude;
+
+ALTER TABLE stadiums ADD INDEX idx_lat_lng (latitude, longitude);
+
+
+
+
+
+--Krishna Newsletter creation -- 
+
+-- Newsletter subscribers table (for home page subscription + admin export)
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NULL,
+    status ENUM('active','inactive') DEFAULT 'active',
+    subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_newsletter_subscribers_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Helpful index for admin lists
+CREATE INDEX idx_newsletter_subscribers_status ON newsletter_subscribers(status);
+CREATE INDEX idx_newsletter_subscribers_subscribed_at ON newsletter_subscribers(subscribed_at);
+
+
+
+-- Home page content settings (single row with id=1)
+CREATE TABLE IF NOT EXISTS home_page_content (
+    id INT PRIMARY KEY DEFAULT 1,
+    hero_title_prefix VARCHAR(100) NOT NULL DEFAULT 'BOOK',
+    hero_title_highlight VARCHAR(100) NOT NULL DEFAULT 'YOUR',
+    hero_title_suffix VARCHAR(100) NOT NULL DEFAULT 'SPORT GROUND',
+    hero_description TEXT NOT NULL DEFAULT 'Your All-in-One Solution for Finding and Booking Indoor & Outdoor Stadiums, Rent Sport Equipments, Attend Practise Sessions, Book Individual Coaching Sessions & Publish Your Advertisements',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ensure one row exists
+INSERT INTO home_page_content (id) VALUES (1)
+ON DUPLICATE KEY UPDATE id = id;
+
+
+
+-- Simple key/value settings used by Home Page Management (footer + social links)
+CREATE TABLE IF NOT EXISTS site_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed defaults (idempotent)
+INSERT INTO site_settings (setting_key, setting_value) VALUES
+('footer_company_name', 'BOOKMYGROUND'),
+('footer_tagline', 'Defend, take care of the ball, rebound, and play hard.'),
+('footer_address', '4200 Reid Avenue, Colombo 07'),
+('footer_phone', '(071) 111 1111'),
+('footer_email', 'support@bookmyground.lk'),
+('social_facebook', '#'),
+('social_linkedin', '#'),
+('social_twitter', '#'),
+('social_youtube', '#')
+ON DUPLICATE KEY UPDATE setting_key = setting_key;
+
+
+
+-- Admin-editable navigation menu items (used in frontend header)
+CREATE TABLE IF NOT EXISTS site_navigation (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  label VARCHAR(60) NOT NULL,
+  url VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_site_navigation_sort (sort_order, id),
+  INDEX idx_site_navigation_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed defaults (idempotent-ish). If you already customized, skip this part.
+INSERT INTO site_navigation (label, url, sort_order, is_active)
+SELECT * FROM (
+  SELECT 'Home' AS label, '/' AS url, 10 AS sort_order, 1 AS is_active
+  UNION ALL SELECT 'Stadiums', '/stadiums', 20, 1
+  UNION ALL SELECT 'Coaches', '/coach', 30, 1
+  UNION ALL SELECT 'Sports', '/sports', 40, 1
+  UNION ALL SELECT 'Rental Services', '/rental', 50, 1
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM site_navigation LIMIT 1);
+
+
+-- Contact page: settings + form submissions
+
+CREATE TABLE IF NOT EXISTS contact_page_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NULL,
+  subject VARCHAR(100) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('new','read','replied','archived') NOT NULL DEFAULT 'new',
+  submitted_at DATETIME NOT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  INDEX idx_contact_messages_status (status),
+  INDEX idx_contact_messages_submitted (submitted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed defaults (idempotent)
+INSERT INTO contact_page_settings (setting_key, setting_value) VALUES
+('page_title', 'Contact Us'),
+('page_subtitle', 'Have questions about stadium bookings, equipment rentals, or coaching services? We''re here to help! Reach out to us and we''ll get back to you as soon as possible.'),
+('main_phone', '(071) 111 1111'),
+('support_phone', '(071) 222 2222'),
+('email', 'support@bookmyground.lk'),
+('support_email', 'help@bookmyground.lk'),
+('address', '4200 Reid Avenue, Colombo 07'),
+('working_hours', 'Monday - Sunday: 6:00 AM - 10:00 PM'),
+('emergency_contact', '(071) 999 9999')
+ON DUPLICATE KEY UPDATE setting_key = setting_key;
+
+-- ======================== BOOKING SYSTEM TABLES ========================
+
+-- Create bookings table
+CREATE TABLE IF NOT EXISTS bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stadium_id INT NOT NULL,
+    customer_id INT NOT NULL,
+    owner_id INT NOT NULL,
+    booking_date DATE NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    duration_hours DECIMAL(5, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    advance_payment DECIMAL(10, 2) DEFAULT 0,
+    final_payment DECIMAL(10, 2) DEFAULT 0,
+    status ENUM('pending', 'confirmed', 'cancelled', 'completed') DEFAULT 'pending',
+    payment_status ENUM('pending', 'partial', 'paid', 'refunded') DEFAULT 'pending',
+    notes TEXT NULL,
+    customer_notes TEXT NULL,
+    cancellation_reason TEXT NULL,
+    cancelled_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_stadium (stadium_id),
+    INDEX idx_customer (customer_id),
+    INDEX idx_owner (owner_id),
+    INDEX idx_booking_date (booking_date),
+    INDEX idx_status (status),
+    INDEX idx_payment_status (payment_status)
+);
+
+-- Create booking_payments table for tracking payment transactions
+CREATE TABLE IF NOT EXISTS booking_payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT NOT NULL,
+    payment_method ENUM('stripe', 'bank_transfer', 'cash', 'cheque') NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'LKR',
+    stripe_payment_id VARCHAR(255) NULL,
+    payment_status ENUM('pending', 'successful', 'failed', 'refunded') DEFAULT 'pending',
+    payment_date DATETIME NULL,
+    refund_amount DECIMAL(10, 2) DEFAULT 0,
+    refund_date DATETIME NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    INDEX idx_booking (booking_id),
+    INDEX idx_payment_status (payment_status),
+    INDEX idx_stripe_payment_id (stripe_payment_id)
+);
+
+-- Create reviews table for stadium ratings and reviews
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stadium_id INT NOT NULL,
+    customer_id INT NOT NULL,
+    booking_id INT NULL,
+    rating INT NOT NULL DEFAULT 5,
+    comment TEXT NULL,
+    cleanliness_rating INT DEFAULT 5,
+    amenities_rating INT DEFAULT 5,
+    service_rating INT DEFAULT 5,
+    value_rating INT DEFAULT 5,
+    verified_booking BOOLEAN DEFAULT FALSE,
+    helpful_count INT DEFAULT 0,
+    unhelpful_count INT DEFAULT 0,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    approved_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
+    INDEX idx_stadium (stadium_id),
+    INDEX idx_customer (customer_id),
+    INDEX idx_rating (rating),
+    INDEX idx_status (status)
+);
+
+-- Update stadiums table to add rating calculation column
+-- Note: Only adds missing columns. If you get duplicate column errors, some may already exist.
+ALTER TABLE stadiums 
+ADD COLUMN IF NOT EXISTS average_rating DECIMAL(3, 2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_reviews INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_booking_date DATETIME NULL;
+
+-- Create sample bookings for testing
+INSERT INTO bookings (stadium_id, customer_id, owner_id, booking_date, start_date, end_date, start_time, end_time, duration_hours, total_price, status, payment_status) VALUES
+(1, 2, 1, '2025-01-25', '2025-01-25', '2025-01-25', '14:00:00', '16:00:00', 2, 10000, 'confirmed', 'paid'),
+(1, 3, 1, '2025-01-26', '2025-01-26', '2025-01-26', '18:00:00', '20:00:00', 2, 10000, 'confirmed', 'pending'),
+(2, 2, 1, '2025-01-27', '2025-01-27', '2025-01-27', '10:00:00', '12:00:00', 2, 7000, 'pending', 'pending'),
+(3, 4, 1, '2025-01-28', '2025-01-28', '2025-01-28', '16:00:00', '18:00:00', 2, 15000, 'confirmed', 'paid');
+
+-- Create sample reviews
+INSERT INTO reviews (stadium_id, customer_id, booking_id, rating, comment, verified_booking, status) VALUES
+(1, 2, 1, 5, 'Excellent facilities and well-maintained ground. The lighting system is perfect for evening matches.', TRUE, 'approved'),
+(1, 3, 2, 4, 'Great stadium with good parking facilities. Only minor issue was the changing room could be cleaner.', TRUE, 'approved'),
+(2, 2, 3, 5, 'Professional quality ground and excellent customer service. Highly recommended!', TRUE, 'approved'),
+(3, 4, 4, 4, 'Good value for money. The turf quality is excellent and perfect for tournaments.', TRUE, 'approved');
+
+-- Update stadiums with calculated ratings
+UPDATE stadiums s SET
+    s.average_rating = (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE stadium_id = s.id AND status = 'approved'),
+    s.total_reviews = (SELECT COUNT(*) FROM reviews WHERE stadium_id = s.id AND status = 'approved'),
+    s.total_bookings = (SELECT COUNT(*) FROM bookings WHERE stadium_id = s.id AND status IN ('confirmed', 'completed')),
+    s.last_booking_date = (SELECT MAX(booking_date) FROM bookings WHERE stadium_id = s.id AND status IN ('confirmed', 'completed'))
+WHERE s.id IN (1, 2, 3, 4);
